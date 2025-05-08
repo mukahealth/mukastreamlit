@@ -8,7 +8,6 @@ GİTHUB
         cd /root/streamlit
         pip install -r requirements.txt
 
-..........................................................................................................
 
 DOCKER : https://hub.docker.com/r/mukahealth/streamlit
 
