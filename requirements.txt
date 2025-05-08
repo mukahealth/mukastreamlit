@@ -1,0 +1,10 @@
+streamlit==1.43.2
+streamlit-javascript==0.1.5
+geopy==2.4.1
+streamlit-modal==0.1.2
+joblib==1.4.2
+xgboost==3.0.0
+scikit-learn==1.6.1
+numpy==2.2.4
+pandas==2.2.3
+requests==2.32.3
