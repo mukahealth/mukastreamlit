@@ -5,8 +5,8 @@ GİTHUB
 
         conda create -n hastalik_env python=3.10
         conda activate hastalik_env
-        cd /root/streamlit
         pip install -r requirements.txt
+        streamlit run main.py
 
 
 DOCKER : https://hub.docker.com/r/mukahealth/streamlit
