@@ -1,7 +1,7 @@
 import streamlit as st
 from app.location import kullanici_konum
 from app.hastaneler import hastane_listesi_al
-from app.popup import show_info_modal  # Pop-up modülünü import ediyoruz
+from app.popup import show_info_modal 
 import time
 from streamlit_modal import Modal
 from PIL import Image
@@ -20,8 +20,6 @@ print(f"[KONUM] Alınan konum: lat={lat}, lon={lon}")
 df = hastane_listesi_al(lat, lon)
 
 show_info_modal()
-
-#...............................................................
 
 
 #Harita iframe'i oluştur
@@ -45,24 +43,6 @@ google_map_iframe = f"""
 </iframe>
 """
 
-
-
-# Sidebar - Yasal Bilgilendirme ESKİ BİLGİLENDİRME KISIMI
-
-# st.sidebar.markdown("""
-#     <div style='display: flex; align-items: center;'>
-#         <img src='https://cdn-icons-png.flaticon.com/128/2797/2797387.png' width='50' style='margin-right:10px;'/>
-#         <div style="font-size: 22px; margin-left: 12px; margin-top: 3px; font-weight: bold;" > Yasal Bilgilendirme </div>
-#     </div>
-# """, unsafe_allow_html=True)
-
-# st.sidebar.markdown("""
-#     <div style='font-size: 12px; margin: 10px 12px; font-weight: bold;'>
-#         Bu uygulama yalnızca yapay zeka destekli tahmini sonuçlar üretir. Gerçek sağlık durumunuzun değerlendirilmesi için mutlaka bir sağlık profesyoneline başvurunuz.
-#         Uygulama tarafından verilen bilgiler, tıbbi teşhis, tedavi ya da yönlendirme amacı taşımaz.
-#         <span style="color: #b00707;">Geliştirici bu sistemin kullanımından doğabilecek herhangi bir sorumluluğu kabul etmez.</span>
-#     </div>
-# """, unsafe_allow_html=True)
 
 with open("assets/lastlogo.png", "rb") as image_file:
     testmhrs_encoded = base64.b64encode(image_file.read()).decode()
@@ -161,16 +141,7 @@ st.sidebar.markdown(f"""
 st.sidebar.markdown(google_map_iframe, unsafe_allow_html=True)
 
 
-# st.sidebar.markdown("### ➤ Size Yakın Hastaneler:")
-# if not df.empty:
-#     for _, row in df.iterrows():
-#         maps_url = f"https://www.google.com/maps/search/?api=1&query={row['lat']},{row['lon']}"
-#         st.sidebar.markdown(f"[🚑 {row['name']}]({maps_url})", unsafe_allow_html=True)
-# else:
-#     st.sidebar.info("Yakınlarda hastane bulunamadı.")
 
-# YOL TARİFİ
-#.................................................................................................
 st.sidebar.markdown("### ➤ Size Yakın Hastaneler:")
 
 if not df.empty:
@@ -192,121 +163,94 @@ if not df.empty:
         )
 else:
     st.sidebar.info("Yakınlarda hastane bulunamadı.")
-#................................................................................................................
-
 
 
 tabs = st.tabs(["**Kalp Yetmezliği Tahmini**", "**Hipertansiyon Tahmini**", "**Diyabet Tahmini**"])
 
 with tabs[0]:
 
-    st.header("❤ Kalp Yetmezliği Riski Tahmini")
+    st.header("❤️ Kalp Yetmezliği Riski Tahmini")
+
+    age_category = st.selectbox("Yaşınızı seçin:", ["55 yaş altı", "55 yaş üstü"])
+    def to_bin_age(x): return 1 if x == "55 yaş üstü" else 0
 
 
-    age_category = st.selectbox(
-        "**Yaş grubunuz hangi aralıktadır?**",
-        ["55 üstü", "45-55 arası", "45 yaş altı"],
-        key="age_group"
-    )
-
-    if age_category == "55 üstü":
-        age = 65
-    elif age_category == "45-55 arası":
-        age = 50
-    elif age_category== "45 yaş altı":
-        age = 38
-
-    
-    #MUSTAFA4..................................................................................
     blood_pressure_category = st.selectbox(
-    "**Dinlenme halindeyken ölçülen kan basıncınız hangi aralıkta?**",
-    ["120 mmHg altı","120 mmHg üstü"],
+    "Dinlenme halindeyken ölçülen kan basıncınız hangi aralıktadır?",
+    ["135 mmHg altı", "135 mmHg üstü"],
     key="blood_pressure_cat",
-    help="**Bu değer istirahat halindeyken ölçülen tansiyon değerinizdir. Ölçüm cihazınızdan veya doktorunuzdan aldığınız değeri giriniz.**")
+    help="Bu değer, istirahat halindeyken ölçülen büyük tansiyon değerinizi ifade eder."
+    )
+    def to_bin_bp(x): return 1 if x == "135 mmHg üstü" else 0
 
-    if blood_pressure_category == "120 mmHg altı":
-        blood_pressure = 105
-    else:
-        blood_pressure = 160
-    #MUSTAFA4..................................................................................
-    
-    #MUSTAFA5..................................................................................
     cholesterol_category = st.selectbox(
-    "**Toplam kolesterol seviyeniz hangi aralıkta?**",
-    ["200 mg/dL altı","200 mg/dL üstü"],
+    "Toplam kolesterol seviyeniz hangi aralıktadır?",
+    ["200 mg/dL altı", "200 mg/dL üstü"],
     key="cholesterol_cat",
-    help="**Toplam kolesterol, kanınızdaki yağ düzeylerini gösterir. Bu değer laboratuvar test sonuçlarınızda yer alır.**")
+    help="Toplam kolesterol değeri laboratuvar testlerinizde yer alır."
+    )
+    def to_bin_chol(x): return 1 if x == "200 mg/dL üstü" else 0
 
-    if cholesterol_category == "200 mg/dL altı":
-        cholesterol = 73
-    else:
-        cholesterol = 150
-    #MUSTAFA5..................................................................................
-
-
-    fasting_blood_sugar = st.radio("**Açlık kan şekeri değeriniz 120 mg/dL'nin üzerinde mi?**", ["> 120 mg/dl", "<= 120 mg/dl"], key="fbs", help="**Açlık kan şekeri en az 8 saatlik açlıktan sonra ölçülen glikoz seviyesidir. 120’nin üzerindeyse diyabet riski taşır.**")
+    fasting_blood_sugar = st.radio(
+    "**Açlık kan şekeri değeriniz 120 mg/dL'nin üzerinde mi?**",
+    ["Evet", "Hayır"],
+    key="fbs",
+    help="**Açlık kan şekeri en az 8 saatlik açlıktan sonra ölçülen glikoz seviyesidir. 120’nin üzerindeyse diyabet riski taşır.**") 
     
-    #MUSTAFA6..................................................................................
-    max_heart_rate_category = st.selectbox(
-    "**Egzersiz sırasında ulaştığınız maksimum kalp hızı hangi aralıktaydı?**",
-    ["120 bpm altı", "120-160 bpm arası", "160 bpm üstü"],
-    key="max_hr_cat",
-    help="**Bu değer, fiziksel efor sırasında ulaştığınız en yüksek nabızdır. Spor sırasında ölçtüğünüz kalp hızı cihazınız varsa buradan bakabilirsiniz.**")
+
+    max_heart_rate = st.number_input(
+    "**Egzersiz sırasında ulaştığınız maksimum kalp hızı (bpm)**",
+    min_value=50,
+    max_value=250,
+    value=140,
+    step=1,
+    help="**Bu değer, fiziksel efor sırasında ulaştığınız en yüksek nabızdır. Spor sırasında ölçtüğünüz kalp hızı cihazınız varsa buradan bakabilirsiniz.**",
+    key="max_hr_input")
 
 
-    if max_heart_rate_category == "120 bpm altı":
-        max_heart_rate = 100
-    elif max_heart_rate_category == "120-160 bpm arası":
-        max_heart_rate = 140
-    else:
-        max_heart_rate = 170
-    #MUSTAFA6..................................................................................
-
-    #MUSTAFA7..................................................................................
-    old_peak_category = st.selectbox(
-    "**EKG'de egzersiz sonrası ST segmentinde çökme gözlemlendiyse miktarı hangi aralıkta?**",
-    ["0.5 mm altı", "0.5-2.0 mm arası", "2.0 mm üstü"],
+    old_peak_category = st.radio(
+    "**Egzersiz sonrası ST segment çökmesi (Oldpeak) 2.0 mm'den büyük mü?**",
+    ["Evet", "Hayır"],
     key="old_peak_cat",
     help="**Bu değer EKG testinde, egzersiz sonrası kalp elektriksel aktivitesindeki değişimi ifade eder. Doktor raporlarında ST segment depresyonu olarak geçer.**")
     
-    if old_peak_category == "0.5 mm altı":
-        old_peak = 0.2
-    elif old_peak_category == "0.5-2.0 mm arası":
-        old_peak = 1.0
-    else:
-        old_peak = 3.0
-    #MUSTAFA7..................................................................................
-
+    
     gender = st.radio("**Cinsiyetinizi belirtir misiniz?**", ["Erkek", "Kadın"], key="gender")
+    
     ecg = st.selectbox("**EKG testinde doktorunuz size hangi sonucu bildirdi?**", ["Normal", "ST", "LVH"], help="**EKG sonuçları genellikle “normal”, “ST segment anormalliği” veya “sol ventrikül hipertrofisi (LVH)” gibi kategorilerde ifade edilir. Doktorunuzun size söylediğini seçin.**")
-    exercise_angina = st.selectbox("**Egzersiz sırasında göğüs ağrısı yaşadınız mı?**", ["Hayır", "Evet"], help="**Fiziksel eforla ortaya çıkan göğüs ağrısı kalp problemleriyle ilişkili olabilir. “Evet” veya “Hayır” şeklinde cevaplayın.**")
+    
+    exercise_angina = st.radio(
+    "**Egzersiz sırasında göğüs ağrısı yaşadınız mı?**",
+    ["Evet", "Hayır"],
+    key="exercise_angina",
+    help="**Fiziksel eforla ortaya çıkan göğüs ağrısı kalp problemleriyle ilişkili olabilir. “Evet” veya “Hayır” şeklinde cevaplayın.**"
+    )    
+
     st_slope = st.selectbox("**Egzersiz sonrası EKG'de ST segmenti nasıl bir eğim gösterdi?**", ["Up", "Flat", "Down"], help="**Bu değer doktorunuzun EKG yorumunda Up, Flat veya Down şeklinde belirtilebilir. ST eğimi kalp kası oksijenlenmesini yansıtır.**")
 
-    fbs_val = 1 if fasting_blood_sugar == "> 120 mg/dl" else 0
-    gender_val = 1 if gender == "Erkek" else 0
-
-
-    ecg_vec = [0, 0]  
+    ecg_vec = [1,0, 0]  # LVH
     if ecg == "Normal":
-        ecg_vec = [1, 0]
+        ecg_vec = [0,1, 0]
     elif ecg == "ST":
-        ecg_vec = [0, 1]
+        ecg_vec = [0,0, 1]
+
+
+      # ST Slope
+    slope = [1,0,0]  # Down
+    if st_slope == "Flat":
+        slope = [0,1,0]
+    elif st_slope == "Up":
+        slope = [0,0,1] 
 
   
-    ex_angina = [1] if exercise_angina == "Evet" else [0]
-
-    slope = [0, 0]  
-    if st_slope == "Flat":
-        slope = [1, 0]
-    elif st_slope == "Up":
-        slope = [0, 1]
+    def to_bin_heart(x): return 1 if x in ["Evet", "Erkek"] else 0
 
     input_data = [
-        age, blood_pressure, cholesterol, fbs_val, max_heart_rate, old_peak,
-        gender_val, *ecg_vec, *ex_angina, *slope
+        to_bin_age(age_category),to_bin_heart(gender), to_bin_bp(blood_pressure_category), to_bin_chol(cholesterol_category), to_bin_heart(fasting_blood_sugar),
+        max_heart_rate,to_bin_heart(exercise_angina),to_bin_heart(old_peak_category),*ecg_vec,*slope
     ]
 
-    model = joblib.load("models/heart.pkl")
+    model = joblib.load("models/heartv2.pkl")
 
     if st.button("**Kalp Yetmezliği Riskini Hesapla**"):
         pred = model.predict([input_data])[0]
@@ -341,133 +285,79 @@ with tabs[0]:
                 "Kalp sağlığında erken teşhis ve müdahale, ciddi sonuçların önüne geçebilir."
             )
 
-    #TESTTEN SONRA SİLİNECEK..........................
-    st.write(" Gönderilen Model Verileri")
-    model_input_labels = [
-    "Yaş", 
-    "Dinlenme Kan Basıncı", 
-    "Toplam Kolesterol", 
-    "Açlık Kan Şekeri (>120 mg/dl ise 1 değilse 0)", 
-    "Maksimum Kalp Hızı", 
-    "ST Segment Depresyonu (Old Peak)",
-    "Cinsiyet (Erkek=1, Kadın=0)",
-    "EKG Sonucu - Normal", 
-    "EKG Sonucu - ST Segment Anormallik", 
-    "Egzersiz Anjinası (Evet=1, Hayır=0)",
-    "ST Eğimi - Flat", 
-    "ST Eğimi - Up"
-    ]
-
-    for label, value in zip(model_input_labels, input_data):
-        st.write(f"- *{label}:* {value}")
-    #TESTTEN SONRA SİLİNECEK..........................
 
 with tabs[1]:
 
     st.header("🩺 Hipertansiyon Riski Tahmini")
 
-    sex_htn = st.selectbox("**Cinsiyetinizi belirtir misiniz?**", [1, 0], key="htn_sex", format_func=lambda x: "Erkek" if x == 1 else "Kadın")
-
-    #MUSTAFA1..................................................
-    age_group_htn = st.selectbox(
-    "**Yaş grubunuzu seçiniz**",
-    ["40 yaş altı", "40-50 yaş arası", "50 yaş üstü"],
-    key="htn_age_group"
-    )
-
+    sex_htn = st.radio("**Cinsiyetiniz nedir?**", ["Kadın", "Erkek"], key="hyp_sex")
     
-    if age_group_htn == "40 yaş altı":
-        age_htn = 35
-    elif age_group_htn == "40-50 yaş arası":
-        age_htn = 48
-    else:
-        age_htn = 62
-    #MUSTAFA1..................................................
+    age_group_htn = st.selectbox(
+        "Yaşınızı seçin:",
+        ["50 yaş altı", "50 yaş üstü"],
+        key="htn_age_group"
+    )
+    def to_bin_age_htn(x): return 1 if x == "50 yaş üstü" else 0
 
+    smoker_htn = st.radio("**Sigara kullanıyor musunuz?**", ["Evet", "Hayır"], key="htn_smoker")
 
-    smoker_htn = st.selectbox("***Sigara kullanıyor musunuz?**", [1, 0], key="htn_smoker", format_func=lambda x: "Evet" if x == 1 else "Hayır", help="**Sigara kullanımı damarların daralmasına ve tansiyonun yükselmesine neden olabilir. Bu bilgi risk analizinde önemlidir.**")
-
-    if smoker_htn == 1:
-        fazla_iciyor_mu = st.radio("**Günlük 10'dan fazla sigara içiyor musunuz?**", ["Evet", "Hayır"], key="htn_sigara_miktar", help="**Aşırı sigara tüketimi kalp-damar sistemini ciddi şekilde etkiler. Günlük sigara miktarınızı belirtin.**")
-        daily_cigarettes_htn = 20 if fazla_iciyor_mu == "Evet" else 1
-    else:
-        daily_cigarettes_htn = 0
-
-    bp_med_htn = st.selectbox("**Tansiyon ilacı kullanıyor musunuz?**", [1, 0], key="htn_bp", format_func=lambda x: "Evet" if x == 1 else "Hayır", help="**Daha önce hipertansiyon tanısı aldıysanız ve ilaç kullanıyorsanız bunu belirtiniz.**")
-    diabetes_htn = st.selectbox("**Diyabet hastası mısınız?**", [1, 0], key="htn_diab", format_func=lambda x: "Evet" if x == 1 else "Hayır", help="**Diyabet ve hipertansiyon sıklıkla birlikte görülür. Bu bilgi risk değerlendirmesi için önemlidir.**")
-
-    #MUSTAFA UNUTTUGUM KOLESTROL.............................
+    diabetes_htn=st.radio("**Diyabet hastası mısınız?**",["Evet","Hayır"],key="htn_diab")
     
     cholesterol_htn_category = st.selectbox(
-    "**Son yapılan kan testinde toplam kolesterol seviyeniz hangi aralıktaydı? (mg/dL)**",
-    ["200 mg/dL altı","200 mg/dL üstü"],
-    key="htn_chol_cat",
-    help="**Kolesterol yüksekliği kalp damar sağlığını etkiler. Laboratuvar sonuçlarınızdan alınan değeri girin.**")
-
-    if cholesterol_htn_category == "200 mg/dL altı":
-        cholesterol_htn = 190.0
-    else:
-        cholesterol_htn = 260.0
-        
-    #MUSTAFA UNUTTUGUM KOLESTROL.............................
-
-    #MUSTAFA2.................................
+    "Son yapılan kan testinde toplam kolesterol seviyeniz:",
+    ["200 mg/dL altı", "200 mg/dL üstü"],
+    key="htn_chol_cat"
+    )
+    def to_bin_chol_htn(x): return 1 if x == "200 mg/dL üstü" else 0
+    
     sys_bp_range = st.selectbox(
-    "**Sistolik (büyük) tansiyon değeriniz hangi aralıktadır?**",
-    ["95-120 mmHg arası", "120 - 135 mmHg arası", "140 - 160 mmHg arası","160 mmHg ve üzeri"],
-    key="htn_sys_range",
-    help="**Sistolik tansiyon kalbin kan pompaladığı andaki basıncı gösterir. Tansiyon aletinden veya doktor raporundan alınabilir.**")
+        "Sistolik (büyük) tansiyon değeriniz:",
+        ["135 mmHg altı", "135 mmHg üstü"],
+        key="htn_sys_range"
+    )
+    def to_bin_sys(x): return 1 if x == "135 mmHg üstü" else 0
 
-    
-    if sys_bp_range == "95-120 mmHg arası":
-        sys_bp_htn = 100
-    elif sys_bp_range == "120 - 135 mmHg arası":
-        sys_bp_htn = 130
-    elif sys_bp_range == "140 - 160 mmHg arası":
-        sys_bp_htn = 145
-    else:
-        sys_bp_htn = 162
-    #MUSTAFA2.................................
-
-    #MUSTAFA3..................................
     dia_bp_range = st.selectbox(
-    "**Diyastolik (küçük) tansiyon değeriniz hangi aralıktadır?**",
-    ["75 mmHg ve altı", "75 - 89 mmHg arası", "90 mmHg ve üzeri"],
-    key="htn_dia_range",
-    help="**Diyastolik tansiyon kalbin gevşediği andaki basıncı gösterir. Tansiyon cihazınızdan öğrenebilirsiniz.**")
-
+    "Diyastolik (küçük) tansiyon değeriniz:",
+    ["85 mmHg altı", "85 mmHg üstü"],
+    key="htn_dia_range"
+    )
+    def to_bin_dia(x): return 1 if x == "85 mmHg üstü" else 0
     
-    if dia_bp_range == "75 mmHg ve altı":
-        dia_bp_htn = 70
-    elif dia_bp_range == "75 - 89 mmHg arası":
-        dia_bp_htn = 80
-    else:
-        dia_bp_htn = 100
-    #MUSTAFA3......................................
-
-    # BMI HESAPLAMA KISMI HİPER!!!
+    # BMI HESAPLAMA KISMI 
     height_htn = st.number_input("**Boyunuz kaç cm?**", min_value=100, max_value=250, value=170, key="htn_height")
     weight_htn = st.number_input("**Kilonuz kaç kg?**", min_value=30, max_value=200, value=70, key="htn_weight")
+    
     # burası kullanıcıya gönderilen bmı kısmı
     bmi_htn = weight_htn / ((height_htn / 100) ** 2) 
 
-    # burası modele gönderilen bmı kısmı
-    bmi_model_input = 20.7 if bmi_htn > 25 else 28.7
+    if 0 <= bmi_htn < 18.5:
+        bmi_htn_group = 0
+    elif 18.5 <= bmi_htn < 25:
+        bmi_htn_group = 1
+    elif 25 <= bmi_htn < 30:
+        bmi_htn_group = 2
+    elif 30 <= bmi_htn < 35:
+        bmi_htn_group = 3
+    elif 35 <= bmi_htn < 40: 
+        bmi_htn_group = 4
+    else:
+        bmi_htn_group = 5
 
-    heart_rate_question = st.radio("**Dinlenme sırasında kalp hızınız 90’dan küçük müydü?**", ["Evet", "Hayır"], key="htn_hr_flag", help="**Kalp hızı nabız ölçer cihazlarla veya doktor ölçümleriyle belirlenebilir. Genellikle dakikadaki atım sayısıdır (bpm).**")
-    heart_rate_htn = 60 if heart_rate_question == "Evet" else 85
 
-    glucose_altinda_mi = st.radio("**Glukoz (şeker) seviyeniz 95 mg/dL’nin altında mıydı?**", ["Evet", "Hayır"], key="htn_glucose_flag", help="**Açlık glukoz değeri, diyabet ve tansiyon ilişkisini analiz etmemize yardımcı olur. Laboratuvar sonucuna göre işaretleyin.**")
-    glucose_htn = 62 if glucose_altinda_mi == "Evet" else 88
+    heart_rate_question = st.radio("**Dinlenme sırasında kalp hızınız 80’dan büyük müydü?**", ["Evet", "Hayır"], key="htn_hr_flag")
 
-    #  Model sırasına göre input
+    glucose_altinda_mi = st.radio("**Glukoz (şeker) seviyeniz 85 mg/dL’nin üstünde miydi?**", ["Evet", "Hayır"], key="htn_glucose_flag")
+
+    def to_bin_hyp(x): return 1 if x in ["Evet", "Erkek"] else 0
+
     input_data_htn = [[
-        sex_htn, age_htn, smoker_htn, daily_cigarettes_htn, bp_med_htn, diabetes_htn,
-        cholesterol_htn, sys_bp_htn, dia_bp_htn, bmi_model_input, heart_rate_htn, glucose_htn
+        to_bin_hyp(sex_htn), to_bin_age_htn(age_group_htn), to_bin_hyp(smoker_htn), to_bin_hyp(diabetes_htn),
+        to_bin_chol_htn(cholesterol_htn_category), to_bin_sys(sys_bp_range), to_bin_dia(dia_bp_range), bmi_htn_group, to_bin_hyp(heart_rate_question), to_bin_hyp(glucose_altinda_mi)
     ]]
 
     #  Modeli yükle
-    htn_model_path = joblib.load("models/hipertansiyon.pkl")
+    htn_model_path = joblib.load("models/hipertansiyonv2.pkl")
 
     #  Tahmin işlemi
     if st.button("**Hipertansiyon Riskini Hesapla**"):
@@ -506,8 +396,6 @@ with tabs[1]:
             Daha kapsamlı bir değerlendirme için sağlık kuruluşuna başvurulması uygun olabilir.
             """)
 
-        
-
         #  BMI YORUM KISIMI
         bmi_status = ""
         if bmi_htn < 18.5:
@@ -525,28 +413,6 @@ with tabs[1]:
 
         st.info(f"**💡 Hesaplanan BMI:** {bmi_htn:.2f} — {bmi_status}")
 
-    #TESTTEN SONRA SİLİNECEK....................................
-    st.write("### Gönderilen Model Verileri (Hipertansiyon)")
-    model_input_labels = [
-        "Cinsiyet",
-        "Yaş",
-        "Sigara Kullanımı",
-        "Günlük Sigara Sayısı",
-        "Tansiyon İlacı Kullanımı",
-        "Diyabet",
-        "Toplam Kolesterol",
-        "Sistolik Tansiyon",
-        "Diyastolik Tansiyon",
-        "BMI (modellenmiş değer)",
-        "Kalp Hızı",
-        "Glukoz Değeri"
-    ]
-
-    for label, value in zip(model_input_labels, input_data_htn[0]):
-        st.write(f"- *{label}:* {value}")
-    #TESTTEN SONRA SİLİNECEK.......................................
-
-
 
 
 with tabs[2]:
@@ -554,33 +420,54 @@ with tabs[2]:
     st.header("🍬 Diyabet Riski Tahmini")
 
     height_diab = st.number_input("**Boyunuz kaç cm?**", min_value=100, max_value=250, value=170, key="diab_height")
+    
     weight_diab = st.number_input("**Kilonuz kaç kg?**", min_value=30, max_value=200, value=70, key="diab_weight")
 
     # BMI hesaplama
     bmi_diab = weight_diab / ((height_diab / 100) ** 2)
 
     age_diab = st.slider("**Kaç yaşındasınız?**", 1, 120, 40, key="diab_age")
+    
     genhlth_diab = st.selectbox("**Genel sağlık durumunuzu nasıl değerlendirirsiniz?** (1: Çok İyi, 2: İyi, 3: Orta, 4: Kötü, 5: Çok Kötü)", [1, 2, 3, 4, 5], key="diab_genhlth", help="**Kendi sağlık algınız, yaşam tarzınızı ve hastalık riskinizi etkileyebilir. Kendi değerlendirmenizi giriniz.**")
+    
     highbp_diab = st.radio("**Yüksek tansiyon teşhisi aldınız mı?**", ["Evet", "Hayır"], key="diab_highbp", help="**Hipertansiyon ve diyabet sıklıkla birlikte görülen kronik hastalıklardır. Doktor teşhisine göre belirtiniz.**")
 
-    physhlth_input = st.radio("**Son 30 gün içerisinde fiziksel sağlık sorunları yaşadınız mı?**", ["Evet", "Hayır"], key="diab_physhlth", help="**Sürekli veya geçici bedensel sağlık sorunları, diyabetle bağlantılı olabilir. Kendi gözleminizi belirtin.**")
-    physhlth_diab = 2 if physhlth_input == "Evet" else -1.6
-
-    menthlth_input = st.radio("**Son 30 gün içerisinde ruhsal sağlık sorunları yaşadınız mı?**", ["Evet", "Hayır"], key="diab_menthlth", help="**Stres, anksiyete veya depresyon gibi durumlar metabolik hastalıklarla ilişkilendirilebilir. Cevabınızı paylaşın.**")
-    menthlth_diab = -1.2 if menthlth_input == "Evet" else 1.2
-
     highchol_diab = st.radio("**Yüksek kolesterol teşhisi aldınız mı?**", ["Evet", "Hayır"], key="diab_highchol", help="**Kolesterol yüksekliği, insülin direnci ve diyabetle bağlantılı olabilir. Doktor teşhisine göre cevaplayın.**")
-    fruits_diab = st.radio("**Günlük meyve tüketiyor musunuz?**", ["Evet", "Hayır"], key="diab_fruits")
+    
+    highcholcheck_diab = st.radio("**Kolesterol kontrolünüz var mı mı?**", ["Evet", "Hayır"], key="diab_highcholcheck", help="**Kolesterol yüksekliği, insülin direnci ve diyabetle bağlantılı olabilir. Doktor teşhisine göre cevaplayın.**")
+
+    fruits_and_veggies_diab = st.radio("**Günlük meyve ve sebze tüketiyor musunuz?**", ["Evet", "Hayır"], key="diab_fruits")
+
     smoker_diab = st.radio("**Sigara kullanıyor musunuz?**", ["Evet", "Hayır"], key="diab_smoker")
+   
     sex_diab = st.radio("**Cinsiyetiniz nedir?**", ["Kadın", "Erkek"], key="diab_sex")
+    
     physactivity_diab = st.radio("**Düzenli olarak egzersiz yapıyor musunuz?**", ["Evet", "Hayır"], key="diab_activity")
-    veggies_diab = st.radio("**Günlük sebze tüketiyor musunuz?**", ["Evet", "Hayır"], key="diab_veggies")
+
     diffwalk_diab = st.radio("**Yürümekte zorluk çekiyor musunuz?**", ["Evet", "Hayır"], key="diab_diff", help="**Hareket kısıtlılığı metabolik bozukluklara zemin hazırlayabilir. Günlük hareket kabiliyetinizi belirtin.**")
+    
     heartdisease_diab = st.radio("**Daha önce kalp hastalığı geçirdiniz mi?**", ["Evet", "Hayır"], key="diab_hd")
+    
     stroke_diab = st.radio("**Daha önce felç geçirdiniz mi?**", ["Evet", "Hayır"], key="diab_stroke")
+    
+    alcholCons_diab = st.radio("**Alkol tüketiyor musunuz?**", ["Evet", "Hayır"], key="diab_AlcholCons")
 
     # Dönüşüm fonksiyonu
     def to_bin(x): return 1 if x in ["Evet", "Erkek"] else 0
+
+    if 0 <= bmi_diab < 18.5:
+        bmi_diab_group = 0
+    elif 18.5 <= bmi_diab < 25:
+        bmi_diab_group = 1
+    elif 25 <= bmi_diab < 30:
+        bmi_diab_group = 2
+    elif 30 <= bmi_diab < 35:
+        bmi_diab_group = 3
+    elif 35 <= bmi_diab < 40: 
+        bmi_diab_group = 4
+    else:
+        bmi_diab_group = 5
+
 
     if 0 <= age_diab <= 24:
         age_diab_group = 1
@@ -609,26 +496,24 @@ with tabs[2]:
     else:
         age_diab_group = 13
     
-    # Model sırasına göre giriş verisi
     input_data_diab = [[
-        bmi_diab,
         age_diab_group,
-        genhlth_diab,
-        to_bin(highbp_diab),
-        physhlth_diab,
-        menthlth_diab,
-        to_bin(highchol_diab),
-        to_bin(fruits_diab),
-        to_bin(smoker_diab),
         to_bin(sex_diab),
-        to_bin(physactivity_diab),
-        to_bin(veggies_diab),
-        to_bin(diffwalk_diab),
+        to_bin(highchol_diab),
+        to_bin(highcholcheck_diab),
+        bmi_diab_group,
+        to_bin(smoker_diab),
         to_bin(heartdisease_diab),
-        to_bin(stroke_diab)
+        to_bin(physactivity_diab),
+        to_bin(alcholCons_diab),
+        genhlth_diab,
+        to_bin(diffwalk_diab),
+        to_bin(stroke_diab),
+        to_bin(highbp_diab),
+        to_bin(fruits_and_veggies_diab)
     ]]
 
-    diabetes_model = joblib.load("models/diyabet.pkl")
+    diabetes_model = joblib.load("models/diyabetv2.pkl")
 
     #  Tahmin işlemi
     if st.button("**Diyabet Riskini Hesapla**"):
@@ -668,7 +553,6 @@ with tabs[2]:
                 """)
 
 
-
             #  BMI yorumu
             bmi_status = ""
             if bmi_diab < 18.5:
@@ -688,27 +572,3 @@ with tabs[2]:
 
         except Exception as e:
             st.error(f"Bir hata oluştu: {e}")
-
-    #TESTTEN SONRA SİLİNECEK.......................................
-    st.write("###  Gönderilen Model Verileri (Diyabet)")
-    model_input_labels_diab = [
-        "Vücut Kitle İndeksi (BMI)",
-        "Yaş Grubu",
-        "Genel Sağlık Durumu",
-        "Yüksek Tansiyon",
-        "Fiziksel Sağlık Sorunu",
-        "Mental Sağlık Sorunu",
-        "Yüksek Kolesterol",
-        "Günlük Meyve Tüketimi",
-        "Sigara Kullanımı",
-        "Cinsiyet",
-        "Düzenli Egzersiz",
-        "Günlük Sebze Tüketimi",
-        "Yürürken Zorluk",
-        "Geçmiş Kalp Hastalığı",
-        "Geçmiş Felç (Stroke)"
-    ]
-
-    for label, value in zip(model_input_labels_diab, input_data_diab[0]):
-        st.write(f"- *{label}:* {value}")
-    #TESTTEN SONRA SİLİNECEK.......................................
