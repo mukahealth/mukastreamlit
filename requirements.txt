@@ -8,3 +8,4 @@ scikit-learn==1.6.1
 numpy==2.2.4
 pandas==2.2.3
 requests==2.32.3
+catboost==1.2.8
