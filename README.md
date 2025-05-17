@@ -8,6 +8,7 @@ GİTHUB
         pip install -r requirements.txt
         streamlit run main.py
 
+📁 notebooks/ klasörü, her hastalık için kullanılan model eğitim süreçlerini ve görselleştirmeleri içerir.
 
 DOCKER : https://hub.docker.com/r/mukahealth/streamlit
 
