@@ -25,7 +25,7 @@ def hastane_listesi_al(lat, lon, radius=10000):  # metre cinsinden
     for el in data["elements"]:
         name = el["tags"].get("name")
         if not name:
-            continue  # 🔸 İsimsiz hastaneleri atla
+            continue  # 
 
         lat_ = el.get("lat") or el.get("center", {}).get("lat")
         lon_ = el.get("lon") or el.get("center", {}).get("lon")
